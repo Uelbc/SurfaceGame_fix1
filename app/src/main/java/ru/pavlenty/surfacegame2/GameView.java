@@ -3,6 +3,8 @@ package ru.pavlenty.surfacegame2;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -19,7 +21,8 @@ public class GameView extends SurfaceView implements Runnable {
     volatile boolean playing;
     private Thread gameThread = null;
     private Player player;
-
+    private Enemy enemy;
+    private Friend friend;
     private Paint paint;
     private Canvas canvas;
     private SurfaceHolder surfaceHolder;
@@ -52,7 +55,8 @@ public class GameView extends SurfaceView implements Runnable {
     public GameView(Context context, int screenX, int screenY) {
         super(context);
         player = new Player(context, screenX, screenY);
-
+        enemy = new Enemy(context, screenX, screenY);
+        friend = new Friend(context, screenX, screenY);
         surfaceHolder = getHolder();
         paint = new Paint();
 
@@ -114,7 +118,8 @@ public class GameView extends SurfaceView implements Runnable {
             control();
         }
     }
-
+    private int BoomX=-1000;
+    private int BoomY=-1000;
     public void draw() {
         if (surfaceHolder.getSurface().isValid()) {
             canvas = surfaceHolder.lockCanvas();
@@ -132,13 +137,29 @@ public class GameView extends SurfaceView implements Runnable {
 
             paint.setTextSize(30);
             canvas.drawText("Очки: "+score,100,50,paint);
-
+            bitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.boom);
+            canvas.drawBitmap(
+                    bitmap,
+                    BoomX,
+                    BoomY,
+                    paint);
             canvas.drawBitmap(
                     player.getBitmap(),
                     player.getX(),
                     player.getY(),
                     paint);
-
+            canvas.drawBitmap(
+                    enemy.getBitmap(),
+                    enemy.getX(),
+                    enemy.getY(),
+                    paint
+            );
+            canvas.drawBitmap(
+                    friend.getBitmap(),
+                    friend.getX(),
+                    friend.getY(),
+                    paint
+            );
 
             if(isGameOver){
                 paint.setTextSize(150);
@@ -152,18 +173,45 @@ public class GameView extends SurfaceView implements Runnable {
 
         }
     }
-
-
+    public int number_of_enemy=1;
+    private int number_of_collisions=0;
     public static void stopMusic(){
         gameOnsound.stop();
     }
-
+    private Bitmap bitmap;
+    int current_number_of_enemy=0;
+    int current_number_of_friend=0;
     private void update() {
         score++;
+        boolean collision_friend = player.getRect().intersect(friend.getRect());
+        boolean collision_enemy = player.getRect().intersect(enemy.getRect());
+        if( collision_friend){
+            if (friend.number_of_friend()==current_number_of_friend){
+            }
+            else{
+                score+=100;
+                current_number_of_friend=friend.number_of_friend;
+            }
+        }
+        if( collision_enemy){
+            if (enemy.number_of_enemy()==current_number_of_enemy){
+            }
+            else {
+                BoomX=player.getX();
+                BoomY=player.getY();
 
+                score-=100;
+                number_of_collisions+=1;
+                if (number_of_collisions>=5){
+                    isGameOver=true;
+                    playing=false;
+            }
+                current_number_of_enemy=enemy.number_of_enemy();
+            }
+        }
         player.update();
-
-
+        enemy.update();
+        friend.update();
         for (Star s : stars) {
             s.update(player.getSpeed());
         }

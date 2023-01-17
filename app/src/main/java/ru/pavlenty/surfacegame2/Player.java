@@ -93,4 +93,7 @@ public class Player {
     public int getSpeed() {
         return speed;
     }
+    public Rect getRect(){
+        return detectCollision;
+    }
 }
