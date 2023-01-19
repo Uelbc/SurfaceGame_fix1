@@ -13,6 +13,7 @@ import android.media.MediaPlayer;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.Button;
 
 import java.util.ArrayList;
 
@@ -26,7 +27,6 @@ public class GameView extends SurfaceView implements Runnable {
     private Paint paint;
     private Canvas canvas;
     private SurfaceHolder surfaceHolder;
-
     private ArrayList<Star> stars = new ArrayList<Star>();
 
     int screenX;
@@ -86,7 +86,6 @@ public class GameView extends SurfaceView implements Runnable {
         killedEnemysound = MediaPlayer.create(context,R.raw.killedenemy);
         gameOversound = MediaPlayer.create(context,R.raw.gameover);
 
-
         gameOnsound.start();
     }
 
@@ -104,6 +103,8 @@ public class GameView extends SurfaceView implements Runnable {
 
         if(isGameOver){
             if(motionEvent.getAction()==MotionEvent.ACTION_DOWN){
+                gameOnsound.stop();
+                gameOversound.start();
                 context.startActivity(new Intent(context,MainActivity.class));
             }
         }
@@ -162,6 +163,27 @@ public class GameView extends SurfaceView implements Runnable {
             );
 
             if(isGameOver){
+                if (score>highScore[0]){
+                    highScore[3]=highScore[2];
+                    highScore[2]=highScore[1];
+                    highScore[1]=highScore[0];
+                    highScore[0]=score;
+                } else if (score>highScore[1]){
+                    highScore[3]=highScore[2];
+                    highScore[2]=highScore[1];
+                    highScore[1]=score;
+                } else if (score>highScore[2]){
+                    highScore[3]=highScore[2];
+                    highScore[2]=score;
+                } else if (score>highScore[3]){
+                    highScore[3]=score;
+                }
+                SharedPreferences.Editor e = sharedPreferences.edit();
+                e.putInt("score1", highScore[0]);
+                e.putInt("score2", highScore[1]);
+                e.putInt("score3", highScore[2]);
+                e.putInt("score4", highScore[3]);
+                e.apply();
                 paint.setTextSize(150);
                 paint.setTextAlign(Paint.Align.CENTER);
 
@@ -195,11 +217,13 @@ public class GameView extends SurfaceView implements Runnable {
         }
         if( collision_enemy){
             if (enemy.number_of_enemy()==current_number_of_enemy){
+                BoomX=-1000;
+                BoomY=-1000;
             }
             else {
                 BoomX=player.getX();
                 BoomY=player.getY();
-
+                killedEnemysound.start();
                 score-=100;
                 number_of_collisions+=1;
                 if (number_of_collisions>=5){
@@ -215,6 +239,7 @@ public class GameView extends SurfaceView implements Runnable {
         for (Star s : stars) {
             s.update(player.getSpeed());
         }
+
     }
 
     private void control() {
